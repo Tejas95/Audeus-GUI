@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>GettingStarted</class>
+ <widget class="QDialog" name="GettingStarted">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>313</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Dialog</string>
+  </property>
+  <widget class="QPlainTextEdit" name="plainTextEdit">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>120</y>
+     <width>351</width>
+     <height>131</height>
+    </rect>
+   </property>
+   <property name="plainText">
+    <string>Welcome to Audeus! To get started, Audeus will need to run a few background checks. After you press &quot;Next&quot;, a window will pop up to detect the noise level around you.  The channel that is in motion should not play anything but the other channels should. The status label will show if the noise detection is complete.
+</string>
+   </property>
+  </widget>
+  <widget class="QPlainTextEdit" name="plainTextEdit_2">
+   <property name="geometry">
+    <rect>
+     <x>50</x>
+     <y>20</y>
+     <width>301</width>
+     <height>81</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>17</pointsize>
+    </font>
+   </property>
+   <property name="plainText">
+    <string>  NOISE DETECTION
+</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="PBNext">
+   <property name="geometry">
+    <rect>
+     <x>290</x>
+     <y>270</y>
+     <width>93</width>
+     <height>28</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Next</string>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
