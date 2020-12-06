@@ -26,6 +26,8 @@ public:
 	};
 
 	CFilter();
+    ~CFilter();
+
 	coeff set_HS_coeffs();
 	coeff set_HP_coeffs();
 	void compute(float **input, float **output, coeff coeffs);

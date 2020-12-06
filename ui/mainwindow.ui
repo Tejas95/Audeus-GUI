@@ -153,7 +153,7 @@
    <widget class="QLabel" name="Ch6Label">
     <property name="geometry">
      <rect>
-      <x>1360</x>
+      <x>1350</x>
       <y>230</y>
       <width>101</width>
       <height>21</height>
@@ -166,7 +166,7 @@
    <widget class="QLabel" name="Ch5Label">
     <property name="geometry">
      <rect>
-      <x>1160</x>
+      <x>1150</x>
       <y>230</y>
       <width>101</width>
       <height>21</height>
@@ -179,7 +179,7 @@
    <widget class="QLabel" name="Ch4Label">
     <property name="geometry">
      <rect>
-      <x>960</x>
+      <x>950</x>
       <y>230</y>
       <width>101</width>
       <height>21</height>
@@ -192,9 +192,9 @@
    <widget class="QLabel" name="Ch3Label">
     <property name="geometry">
      <rect>
-      <x>760</x>
+      <x>750</x>
       <y>230</y>
-      <width>83</width>
+      <width>111</width>
       <height>21</height>
      </rect>
     </property>
@@ -205,7 +205,7 @@
    <widget class="QLabel" name="Ch2Label">
     <property name="geometry">
      <rect>
-      <x>560</x>
+      <x>550</x>
       <y>230</y>
       <width>101</width>
       <height>21</height>
@@ -233,7 +233,7 @@
      <rect>
       <x>310</x>
       <y>340</y>
-      <width>91</width>
+      <width>111</width>
       <height>21</height>
      </rect>
     </property>
@@ -272,7 +272,7 @@
      <rect>
       <x>510</x>
       <y>340</y>
-      <width>91</width>
+      <width>111</width>
       <height>21</height>
      </rect>
     </property>
@@ -298,7 +298,7 @@
      <rect>
       <x>710</x>
       <y>340</y>
-      <width>91</width>
+      <width>111</width>
       <height>21</height>
      </rect>
     </property>
@@ -324,7 +324,7 @@
      <rect>
       <x>910</x>
       <y>340</y>
-      <width>91</width>
+      <width>111</width>
       <height>21</height>
      </rect>
     </property>
@@ -350,7 +350,7 @@
      <rect>
       <x>1110</x>
       <y>340</y>
-      <width>91</width>
+      <width>111</width>
       <height>21</height>
      </rect>
     </property>
@@ -376,7 +376,7 @@
      <rect>
       <x>1310</x>
       <y>340</y>
-      <width>91</width>
+      <width>111</width>
       <height>21</height>
      </rect>
     </property>
@@ -477,7 +477,7 @@
      </font>
     </property>
     <property name="text">
-     <string>START</string>
+     <string>START INITIALIZATION</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_34">
@@ -2322,7 +2322,7 @@
    <widget class="QLabel" name="MasterLabel">
     <property name="geometry">
      <rect>
-      <x>1540</x>
+      <x>1560</x>
       <y>230</y>
       <width>91</width>
       <height>21</height>
@@ -2627,76 +2627,6 @@
      <string>0</string>
     </property>
    </widget>
-   <widget class="QGraphicsView" name="graphicsView">
-    <property name="geometry">
-     <rect>
-      <x>430</x>
-      <y>390</y>
-      <width>41</width>
-      <height>411</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QGraphicsView" name="graphicsView_2">
-    <property name="geometry">
-     <rect>
-      <x>630</x>
-      <y>390</y>
-      <width>41</width>
-      <height>411</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QGraphicsView" name="graphicsView_3">
-    <property name="geometry">
-     <rect>
-      <x>830</x>
-      <y>390</y>
-      <width>41</width>
-      <height>411</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QGraphicsView" name="graphicsView_4">
-    <property name="geometry">
-     <rect>
-      <x>1030</x>
-      <y>390</y>
-      <width>41</width>
-      <height>411</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QGraphicsView" name="graphicsView_5">
-    <property name="geometry">
-     <rect>
-      <x>1230</x>
-      <y>390</y>
-      <width>41</width>
-      <height>411</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QGraphicsView" name="graphicsView_6">
-    <property name="geometry">
-     <rect>
-      <x>1420</x>
-      <y>390</y>
-      <width>41</width>
-      <height>411</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QGraphicsView" name="graphicsView_7">
-    <property name="geometry">
-     <rect>
-      <x>1620</x>
-      <y>500</y>
-      <width>41</width>
-      <height>411</height>
-     </rect>
-    </property>
-   </widget>
    <widget class="QPushButton" name="pushButton">
     <property name="geometry">
      <rect>
@@ -2713,6 +2643,24 @@
     </property>
     <property name="text">
      <string>FREEZE</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="PBStartAudio">
+    <property name="geometry">
+     <rect>
+      <x>350</x>
+      <y>30</y>
+      <width>221</width>
+      <height>71</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>14</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>START</string>
     </property>
    </widget>
    <zorder>line_87</zorder>
@@ -2898,14 +2846,8 @@
    <zorder>label_74</zorder>
    <zorder>line_142</zorder>
    <zorder>label_75</zorder>
-   <zorder>graphicsView</zorder>
-   <zorder>graphicsView_2</zorder>
-   <zorder>graphicsView_3</zorder>
-   <zorder>graphicsView_4</zorder>
-   <zorder>graphicsView_5</zorder>
-   <zorder>graphicsView_6</zorder>
-   <zorder>graphicsView_7</zorder>
    <zorder>pushButton</zorder>
+   <zorder>PBStartAudio</zorder>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
@@ -2913,7 +2855,7 @@
      <x>0</x>
      <y>0</y>
      <width>1810</width>
-     <height>26</height>
+     <height>32</height>
     </rect>
    </property>
   </widget>

@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui concurrent
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -22,6 +22,9 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
+DEFINES += PA_USE_ALSA \
+    PA_USE_OSS \
+    PA_USE_JACK
 
 SOURCES += src/main.cpp\
     src/Gate.cpp \
@@ -39,7 +42,8 @@ SOURCES += src/main.cpp\
     src/noise_4.cpp \
     src/noise_5.cpp \
     src/noise_6.cpp \
-    src/pawrapper.cpp
+    audiowrapper.cpp
+
 
 HEADERS  += inc/mainwindow.h \
     inc/Audeus.h \
@@ -57,7 +61,9 @@ HEADERS  += inc/mainwindow.h \
     inc/noise_4.h \
     inc/noise_5.h \
     inc/noise_6.h \
-    inc/pawrapper.h
+    portaudio/include/pa_linux_alsa.h \
+    portaudio/include/portaudio.h \
+    audiowrapper.h
 
 
 FORMS += ui/mainwindow.ui \
@@ -68,14 +74,20 @@ FORMS += ui/mainwindow.ui \
     ui/noise_3.ui \
     ui/noise_4.ui \
     ui/noise_5.ui \
-    ui/noise_6.ui
+    ui/noise_6.ui \
+    levelmeter.ui
 
 INCLUDEPATH += inc \
-    portaudio/include \
+    portaudio/include
 
 
-LIBS += C:\Users\temanjunath.ADHARMAN\Desktop\Audeus\portaudio\build\msvc\x64\Release\portaudio_x64.lib
+
+#LIBS += -Lportaudio -L/usr/lib/arm-linux-gnueabihf/libstdc++.so.6.0.25 -lrt -lm -lasound -ljack -lpthread
 
 
-#DISTFILES += \
-#    libportaudio.a
+unix:!macx: LIBS += -L$$PWD/../ -lportaudio -L/usr/lib/arm-linux-gnueabihf/libstdc++.so.6.0.25 -lrt -lm -lasound -ljack -lpthread
+
+INCLUDEPATH += $$PWD/portaudio/include
+DEPENDPATH += $$PWD/portaudio/include
+
+unix:!macx: PRE_TARGETDEPS += $$PWD/../libportaudio.a

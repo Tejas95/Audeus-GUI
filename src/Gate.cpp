@@ -19,17 +19,21 @@ CGate::CGate()
 }
 
 
-void CGate::compute_gate(const float** in, float** out, float* input_loudness, float* threshold, float* gain)
+void CGate::compute_gate(float** input, float** output, float* threshold, float* gain)
 {
+    CLoudness cloudness;
+
+    cloudness.compute_loudness(input, loudness_current);
+
     //Gain Calculation for limiter
     for (int i = 0; i < NUM_CHANNELS; i++)
     {
         for (int j = 0; j < FRAMES_PER_BUFFER; j++)
         {
-            if (input_loudness[i] < threshold[i])
-                out[i][j] = 0;
+            if (input[i][j] < threshold[i])
+                output[i][j] = 0;
             else
-                out[i][j] = in[i][j] * gain[i];
+                output[i][j] = input[i][j] * gain[i];
         }
     }
 }

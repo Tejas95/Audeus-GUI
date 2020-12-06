@@ -46,7 +46,10 @@
 */
 
 #include "Audeus.h"
+#include <QDebug>
+#include "noise_1.h"
 
+CAudeus AUD;
 
 CAudeus::CAudeus()
 {
@@ -57,34 +60,30 @@ CAudeus::CAudeus()
     inputLoudnessLevelTemp = 0;
     gainLevelTemp = 0;
     channelTemp = 0;
+    startChannel = 0;
+    endChannel = 0;
 
     output = new float *[NUM_CHANNELS]; //num_channels x blocksize
     input = new float *[NUM_CHANNELS];
 
     gain = new float[NUM_CHANNELS];
     gainToBe = new float[NUM_CHANNELS];
-    adaptiveEndGain = new float[NUM_CHANNELS];
-    increment = new float[NUM_CHANNELS];
 
     loud_I = new float[NUM_CHANNELS];
-    loud_O = new float[NUM_CHANNELS];
-    memset(loud_I, 0, sizeof(float) * NUM_CHANNELS);
-    memset(loud_O, 0, sizeof(float) * NUM_CHANNELS);
+    memset(loud_I, 0, sizeof(float) * NUM_CHANNELS);    
+
+    numberOfNoiseLoudnessValues = 20;
+    numberOfInputLoudnessValues = 20;
+    numberOfGainValues = 20;
 
     noiseLoudnessLevelsBuffer = new float*[NUM_CHANNELS];
     noiseLoudnessLevelBufferAvg = new float[NUM_CHANNELS];
-    noiseLoudnessLevelBufferMax = new float[NUM_CHANNELS];
-    noiseArray = new float[numberOfNoiseLoudnessValues];
+    //noiseArray = new float[numberOfNoiseLoudnessValues];
     inputLoudnessLevelsBuffer = new float*[NUM_CHANNELS];
     inputLoudnessLevelBufferAvg = new float[NUM_CHANNELS];
     memset(noiseLoudnessLevelBufferAvg, 0, sizeof(float) * NUM_CHANNELS);
-    memset(noiseLoudnessLevelBufferMax, 0, sizeof(float) * NUM_CHANNELS);
-    memset(inputLoudnessLevelBufferAvg, 0, sizeof(float) * NUM_CHANNELS);
-    memset(increment, 0, sizeof(float) * NUM_CHANNELS);
+    //memset(inputLoudnessLevelBufferAvg, 0, sizeof(float) * NUM_CHANNELS);
 
-    numberOfNoiseLoudnessValues = 10;
-    numberOfInputLoudnessValues = 10;
-    numberOfGainValues = 10;
 
     noiseLoudnessLevelStart = "YES";
     noiseLoudnessLevelIsDone = "NO";
@@ -94,12 +93,11 @@ CAudeus::CAudeus()
     gainLevelIsDone = "NO";
 
     loudnessReferenceValues = new float[NUM_CHANNELS];
-    current_loudness = new float[NUM_CHANNELS];
     limiterThreshold = new float[NUM_CHANNELS];
     gateThreshold = new float[NUM_CHANNELS];
     loudnessValues = new float[NUM_CHANNELS];
 
-    SLOW_TIME_CONSTANT = 0.3;
+    SLOW_TIME_CONSTANT = 0.8;
 
     for (int i = 0; i < NUM_CHANNELS; i++)
     {
@@ -110,197 +108,34 @@ CAudeus::CAudeus()
         inputLoudnessLevelsBuffer[i] = new float[numberOfInputLoudnessValues];
         memset(output[i], 0, sizeof(float) * BLOCK_SIZE);
         memset(input[i], 0, sizeof(float) * BLOCK_SIZE);
-        memset(noiseLoudnessLevelsBuffer[i], 0, sizeof(float) * numberOfNoiseLoudnessValues);
-        memset(inputLoudnessLevelsBuffer[i], 0, sizeof(float) * numberOfInputLoudnessValues);
+        //memset(noiseLoudnessLevelsBuffer[i], 0, sizeof(float) * numberOfNoiseLoudnessValues);
+        //memset(inputLoudnessLevelsBuffer[i], 0, sizeof(float) * numberOfInputLoudnessValues);
 
-        loudnessReferenceValues[i] = -30;
-        current_loudness[i] = loudnessReferenceValues[i];
-        limiterThreshold[i] = loudnessReferenceValues[i] + 15;
+        loudnessReferenceValues[i] = -24;
+        loudnessValues[i] = -24;
+        limiterThreshold[i] = loudnessReferenceValues[i] + 5;
         gateThreshold[i] = loudnessReferenceValues[i] - 20;
         gain[i] = 1;
         gainToBe[i] = 1;
-
     }
 }
 
+
+
+
 void CAudeus::calculateAverage(float **input, float *output, int numberOfNoiseValues)
 {
-    for (int i = startChannel; i < endChannel; i++)
+    for (int i = AUD.startChannel; i < AUD.endChannel; i++)
     {
         for (int j = 0; j < numberOfNoiseValues; j++)
         {
             output[i] += input[i][j];
+            qDebug() << input[i][j];
         }
 
         output[i] = output[i] / numberOfNoiseValues;
+
     }
-}
-
-
-int CAudeus::AudioCallback(const void *inputBuffer, void *outputBuffer,
-    unsigned long framesPerBuffer,
-    const PaStreamCallbackTimeInfo* timeInfo,
-    PaStreamCallbackFlags statusFlags,
-    void *userData)
-{
-    float **out = (float**)outputBuffer;
-    const float **in = (const float**)inputBuffer;
-
-    unsigned int i;
-    unsigned int j;
-    (void)timeInfo; /* Prevent unused variable warnings. */
-    (void)statusFlags;
-
-    CAudeus* AUD = (CAudeus*)userData;
-
-    AUD->BlocksizeTemp = AUD->BlocksizeTemp + 1;
-
-    for (i = 0; i < NUM_CHANNELS; i++)
-    {
-        if (inputBuffer == NULL)
-        {
-            for (j = 0; j < framesPerBuffer; j++)
-            {
-                out[i][j] = 0;  // silent
-            }
-        }
-
-        else
-        {
-            //Adaptive Gain
-            if (AUD->gainLevelIsDone.compare("YES") == 0)
-            {
-                if (AUD->BlocksizeTemp == AUD->numBlocks)
-                {
-                    AUD->Cloud.compute_loudness(AUD->input, AUD->current_loudness);
-                    AUD->Climiter.compute_limiter(AUD->loudnessReferenceValues, AUD->current_loudness, AUD->limiterThreshold, AUD->gain, AUD->gainToBe);
-                }
-            }
-
-            for (j = 0; j < framesPerBuffer; j++)
-            {
-                AUD->gain[i] = (AUD->SLOW_TIME_CONSTANT * AUD->gainToBe[i]) + ((1 - AUD->SLOW_TIME_CONSTANT) * AUD->gain[i]); //Moving Average filter to smooth gain
-
-                AUD->input[i][(j + (framesPerBuffer * AUD->BlocksizeTemp))] = in[i][j];
-                AUD->output[i][(j + (framesPerBuffer * AUD->BlocksizeTemp))] = AUD->gain[i] * in[i][j];
-
-                out[i][j] = AUD->gain[i] * in[i][j];
-            }
-        }
-    }
-
-
-    /***************************************** THIS PART IS THE STEPS ***********************************************/
-
-
-    //Check if number of samples required to calculate loudness is reached
-
-    if (AUD->BlocksizeTemp == AUD->numBlocks)
-    {
-        // START WITH NOISE
-
-        if (AUD->noiseLoudnessLevelStart.compare("YES") == 0)
-        {
-            if (AUD->noiseLoudnessLevelTemp == 0 && AUD->channelTemp == 0)
-                printf("Noise loudness level detection has started \n");
-
-            //Creates noise level buffer
-            if (AUD->noiseLoudnessLevelIsDone.compare("NO") == 0)
-            {
-                //Noise detection with cross talk
-                if (AUD->noiseLoudnessLevelTemp == AUD->numberOfNoiseLoudnessValues - 1)
-                {
-                    cout << "Noise level detection for Channel " << AUD->channelTemp + 1 << " is complete" << endl;
-                    AUD->channelTemp += 1;
-                    AUD->noiseLoudnessLevelTemp = 0;
-                }
-
-                if (AUD->noiseLoudnessLevelTemp == 0)
-                {
-                    cout << "Every channel except for channel " << AUD->channelTemp + 1 << " should play something" << endl;
-                }
-
-                //Calculates input loudness
-                AUD->Cloud.compute_loudness(AUD->input, AUD->loud_I);
-
-                //Store each channel loudness in temp buffer -> 10 values
-                //for (int channel = 0; channel < NUM_CHANNELS; channel++)
-                AUD->noiseLoudnessLevelsBuffer[AUD->channelTemp][AUD->noiseLoudnessLevelTemp] = AUD->loud_I[AUD->channelTemp];
-
-                AUD->noiseLoudnessLevelTemp += 1;
-
-
-                //Calculate average of 10 values and move on
-                if (AUD->noiseLoudnessLevelTemp == AUD->numberOfNoiseLoudnessValues -1 && AUD->channelTemp == NUM_CHANNELS - 1)
-                {
-                    AUD->calculateAverage(AUD->noiseLoudnessLevelsBuffer, AUD->noiseLoudnessLevelBufferAvg, AUD->numberOfNoiseLoudnessValues);
-                    //for (int i = 0; i < NUM_CHANNELS; i++)
-                    //{
-                    //	memcpy(AUD->noiseArray, AUD->noiseLoudnessLevelsBuffer[i], sizeof(float) * AUD->numberOfNoiseLoudnessValues);
-                    //	AUD->noiseLoudnessLevelBufferMax[i] = max_element(AUD->noiseArray[i], AUD->noiseArray[i]);
-                    //}
-                    printf("Noise level detection is complete \n");
-                    cout << "Noise Level for channel 1 is: " << AUD->noiseLoudnessLevelBufferAvg[0] << endl;
-                    AUD->noiseLoudnessLevelIsDone = "YES";
-                    AUD->inputLoudnessLevelStart = "YES";
-                    printf("Input loudness level detection has started. Please play or sing anything for about 10 seconds \n");
-                }
-            }
-        }
-
-
-        //CALCULATE INPUT LOUDNESS
-
-        if (AUD->inputLoudnessLevelStart.compare("YES") == 0)
-        {
-            if (AUD->inputLoudnessLevelIsDone.compare("NO") == 0)
-            {
-                //Calculates input loudness
-                AUD->Cloud.compute_loudness(AUD->input, AUD->loud_I);
-
-                //Store each channel loudness and input in temp buffer -> 10 values
-                for (int channel = 0; channel < NUM_CHANNELS; channel++)
-                {
-                    if (AUD->loud_I[channel] > AUD->noiseLoudnessLevelBufferAvg[channel])
-                    {
-                        AUD->inputLoudnessLevelsBuffer[channel][AUD->inputLoudnessLevelTemp] = AUD->loud_I[channel];
-                        AUD->inputLoudnessLevelTemp += 1;
-                        //memcpy(AUD->inputBufferForGain[channel], AUD->input[channel], sizeof(float)*BLOCK_SIZE);
-                    }
-                }
-
-                //Calculate average of 10 values and move on
-                if (AUD->inputLoudnessLevelTemp == AUD->numberOfInputLoudnessValues)
-                {
-                    AUD->calculateAverage(AUD->inputLoudnessLevelsBuffer, AUD->inputLoudnessLevelBufferAvg, AUD->numberOfInputLoudnessValues);
-
-                    printf("Input level detection is complete \n");
-                    cout << "Input Level for channel 1 is: " << AUD->inputLoudnessLevelBufferAvg[0] << endl;
-                    cout << "Input Level for channel 2 is: " << AUD->inputLoudnessLevelBufferAvg[1] << endl;
-                    AUD->inputLoudnessLevelIsDone = "YES";
-                    AUD->gainLevelStart = "YES";
-                }
-            }
-        }
-
-        //CALCULATE GAIN
-
-        if (AUD->gainLevelStart.compare("YES") == 0)
-        {
-            memcpy(AUD->loudnessValues, AUD->loudnessReferenceValues, sizeof(float) * NUM_CHANNELS);
-
-            if (AUD->gainLevelIsDone.compare("NO") == 0)
-            {
-                AUD->Cgain.cal_gain(AUD->inputLoudnessLevelBufferAvg, AUD->loudnessValues, AUD->gain);
-                printf("Gain is complete \n");
-                AUD->gainLevelIsDone = "YES";
-            }
-        }
-
-        AUD->BlocksizeTemp = 0;
-    }
-
-    return paContinue;
 }
 
 
@@ -318,57 +153,64 @@ int CAudeus::AudioCallbackNoiseDetection(const void *inputBuffer, void *outputBu
     (void)timeInfo; /* Prevent unused variable warnings. */
     (void)statusFlags;
 
-    CAudeus* AUD = (CAudeus*)userData;
-    paWrapper ap;
+    CAudeus* AudNoise = (CAudeus*)userData;
 
-    AUD->BlocksizeTemp = AUD->BlocksizeTemp + 1;
+    AUD.BlocksizeTemp = AUD.BlocksizeTemp + 1;
 
-    if (inputBuffer == NULL)
+    for (int i = 0; i < NUM_CHANNELS; i++)
     {
-        for (j = 0; j < framesPerBuffer; j++)
+        if (inputBuffer == NULL)
         {
-            out[AUD->startChannel][j] = 0;  // silent
+            for (j = 0; j < framesPerBuffer; j++)
+            {
+                out[i][j] = 0;  // silent
+            }
+        }
+
+        else
+        {
+            for (j = 0; j < framesPerBuffer; j++)
+            {
+                AUD.input[AUD.startChannel][(j + (framesPerBuffer * AUD.BlocksizeTemp))] = in[AUD.startChannel][j];
+                AUD.output[AUD.startChannel][(j + (framesPerBuffer * AUD.BlocksizeTemp))] = in[AUD.startChannel][j];
+
+                out[i][j] = in[AUD.startChannel][j];
+
+            }
         }
     }
-
-    else
-    {
-        for (j = 0; j < framesPerBuffer; j++)
-        {
-            AUD->input[AUD->startChannel][(j + (framesPerBuffer * AUD->BlocksizeTemp))] = in[AUD->startChannel][j];
-            AUD->output[AUD->startChannel][(j + (framesPerBuffer * AUD->BlocksizeTemp))] = in[AUD->startChannel][j];
-        }
-    }
-
 
     /***************************************** THIS PART IS THE STEPS ***********************************************/
 
 
     //Check if number of samples required to calculate loudness is reached
 
-    if (AUD->BlocksizeTemp == AUD->numBlocks)
+    if (AUD.BlocksizeTemp == AUD.numBlocks)
     {
+        //qDebug() << AUD.noiseLoudnessLevelTemp;
+
         // START WITH NOISE
-        if (AUD->noiseLoudnessLevelTemp != AUD->numberOfNoiseLoudnessValues - 1)
+        if (AUD.noiseLoudnessLevelTemp != AUD.numberOfNoiseLoudnessValues - 1)
         {
             //Calculates input loudness
-            AUD->Cloud.compute_loudness(AUD->input, AUD->loud_I);
+            AUD.Cloud.compute_loudness(AUD.input, AUD.loud_I);
 
             //Store each channel loudness in temp buffer -> 10 values
-            AUD->noiseLoudnessLevelsBuffer[AUD->startChannel][AUD->noiseLoudnessLevelTemp] = AUD->loud_I[AUD->startChannel];
+            AudNoise->noiseLoudnessLevelsBuffer[AUD.startChannel][AUD.noiseLoudnessLevelTemp] = AUD.loud_I[AUD.startChannel];
 
-            AUD->noiseLoudnessLevelTemp += 1;
+            AUD.noiseLoudnessLevelTemp += 1;
         }
 
 
-        //Calculate average of 10 values and move on
+        //Calculate average of 20 values and move on
         else
         {
-            AUD->calculateAverage(AUD->noiseLoudnessLevelsBuffer, AUD->noiseLoudnessLevelBufferAvg, AUD->numberOfNoiseLoudnessValues);
-            ap.stopAudio();
+            AUD.calculateAverage(AudNoise->noiseLoudnessLevelsBuffer, AUD.noiseLoudnessLevelBufferAvg, AUD.numberOfNoiseLoudnessValues);
+            qDebug() << "0" << AUD.noiseLoudnessLevelBufferAvg[0];
+            qDebug() << "1" << AUD.noiseLoudnessLevelBufferAvg[1];
         }
 
-        AUD->BlocksizeTemp = 0;
+        AUD.BlocksizeTemp = 0;
     }
 
     return paContinue;
@@ -390,10 +232,9 @@ int CAudeus::AudioCallbackInput(const void *inputBuffer, void *outputBuffer,
     (void)timeInfo; /* Prevent unused variable warnings. */
     (void)statusFlags;
 
-    CAudeus* AUD = (CAudeus*)userData;
-    paWrapper ap;
+    CAudeus* AudInput = (CAudeus*)userData;
 
-    AUD->BlocksizeTemp = AUD->BlocksizeTemp + 1;
+    AUD.BlocksizeTemp = AUD.BlocksizeTemp + 1;
 
     for (i = 0; i < NUM_CHANNELS; i++)
     {
@@ -407,26 +248,15 @@ int CAudeus::AudioCallbackInput(const void *inputBuffer, void *outputBuffer,
 
         else
         {
-            //Adaptive Gain
-            if (AUD->gainLevelIsDone.compare("YES") == 0)
-            {
-                if (AUD->BlocksizeTemp == AUD->numBlocks)
-                {
-                    AUD->Cloud.compute_loudness(AUD->input, AUD->current_loudness);
-                    AUD->Climiter.compute_limiter(AUD->loudnessReferenceValues, AUD->current_loudness, AUD->limiterThreshold, AUD->gain, AUD->gainToBe);
-                }
-            }
-
             for (j = 0; j < framesPerBuffer; j++)
             {
-                AUD->gain[i] = (AUD->SLOW_TIME_CONSTANT * AUD->gainToBe[i]) + ((1 - AUD->SLOW_TIME_CONSTANT) * AUD->gain[i]); //Moving Average filter to smooth gain
+                //AUD->gain[i] = (AUD->SLOW_TIME_CONSTANT * AUD->gainToBe[i]) + ((1 - AUD->SLOW_TIME_CONSTANT) * AUD->gain[i]); //Moving Average filter to smooth gain
 
-                AUD->input[i][(j + (framesPerBuffer * AUD->BlocksizeTemp))] = in[i][j];
-                AUD->output[i][(j + (framesPerBuffer * AUD->BlocksizeTemp))] = AUD->gain[i] * in[i][j];
+                AUD.input[i][(j + (framesPerBuffer * AUD.BlocksizeTemp))] = in[i][j];
+                //AUD.output[i][(j + (framesPerBuffer * AUD.BlocksizeTemp))] = AUD.gain[i] * in[i][j];
+
+                out[i][j] = in[i][j];
             }
-
-            AUD->Cgate.compute_gate(in, out, AUD->current_loudness, AUD->gateThreshold, AUD->gain);
-
         }
     }
 
@@ -436,21 +266,21 @@ int CAudeus::AudioCallbackInput(const void *inputBuffer, void *outputBuffer,
 
     //Check if number of samples required to calculate loudness is reached
 
-    if (AUD->BlocksizeTemp == AUD->numBlocks)
+    if (AUD.BlocksizeTemp == AUD.numBlocks)
     {
         //CALCULATE INPUT LOUDNESS
 
-        if (AUD->inputLoudnessLevelTemp == AUD->numberOfInputLoudnessValues)
+        if (AUD.inputLoudnessLevelTemp != AUD.numberOfInputLoudnessValues - 1)
         {
-            AUD->Cloud.compute_loudness(AUD->input, AUD->loud_I);
+            AUD.Cloud.compute_loudness(AUD.input, AUD.loud_I);
 
             //Store each channel loudness and input in temp buffer -> 10 values
             for (int channel = 0; channel < NUM_CHANNELS; channel++)
             {
-                if (AUD->loud_I[channel] > AUD->noiseLoudnessLevelBufferAvg[channel])
+                if (AUD.loud_I[channel] > AUD.noiseLoudnessLevelBufferAvg[channel])
                 {
-                    AUD->inputLoudnessLevelsBuffer[channel][AUD->inputLoudnessLevelTemp] = AUD->loud_I[channel];
-                    AUD->inputLoudnessLevelTemp += 1;
+                    AudInput->inputLoudnessLevelsBuffer[channel][AUD.inputLoudnessLevelTemp] = AUD.loud_I[channel];
+                    AUD.inputLoudnessLevelTemp += 1;
                 }
             }
         }
@@ -458,28 +288,85 @@ int CAudeus::AudioCallbackInput(const void *inputBuffer, void *outputBuffer,
         //Calculate average of 10 values and move on
         else
         {
-            AUD->calculateAverage(AUD->inputLoudnessLevelsBuffer, AUD->inputLoudnessLevelBufferAvg, AUD->numberOfInputLoudnessValues);
+            AUD.calculateAverage(AudInput->inputLoudnessLevelsBuffer, AUD.inputLoudnessLevelBufferAvg, AUD.numberOfInputLoudnessValues);
+            qDebug() << "HI";
+
+            AUD.gainLevelStart = "YES";
         }
 
 
         //CALCULATE GAIN
 
-        if (AUD->gainLevelStart.compare("YES") == 0)
+        if (AUD.gainLevelStart.compare("YES") == 0)
         {
-            memcpy(AUD->loudnessValues, AUD->loudnessReferenceValues, sizeof(float) * NUM_CHANNELS);
+            memcpy(AUD.loudnessValues, AUD.loudnessReferenceValues, sizeof(float) * NUM_CHANNELS);
 
-            if (AUD->gainLevelIsDone.compare("NO") == 0)
+            AUD.Cgain.cal_gain(AUD.inputLoudnessLevelBufferAvg, AUD.loudnessValues, AUD.gain);
+
+            qDebug() << "Gain" << AUD.gain[0];
+            qDebug() << "Gain" << AUD.gain[0];
+
+
+            AUD.gainLevelIsDone = "YES";
+        }
+
+
+        AUD.BlocksizeTemp = 0;
+    }
+
+    return paContinue;
+}
+
+
+int CAudeus::AudioCallback(const void *inputBuffer, void *outputBuffer,
+    unsigned long framesPerBuffer,
+    const PaStreamCallbackTimeInfo* timeInfo,
+    PaStreamCallbackFlags statusFlags,
+    void *userData)
+{
+    float **out = (float**)outputBuffer;
+    const float **in = (const float**)inputBuffer;
+
+    unsigned int i;
+    unsigned int j;
+    (void)timeInfo; /* Prevent unused variable warnings. */
+    (void)statusFlags;
+
+    CAudeus* AudMain = (CAudeus*)userData;
+
+    AudMain->BlocksizeTemp = AudMain->BlocksizeTemp + 1;
+
+    for (i = 0; i < NUM_CHANNELS; i++)
+    {
+        if (inputBuffer == NULL)
+        {
+            for (j = 0; j < framesPerBuffer; j++)
             {
-                AUD->Cgain.cal_gain(AUD->inputLoudnessLevelBufferAvg, AUD->loudnessValues, AUD->gain);
-                printf("Gain is complete \n");
-                AUD->gainLevelIsDone = "YES";
+                out[i][j] = 0;  // silent
             }
         }
 
-        if (AUD->gainLevelIsDone.compare("YES") == 0)
-            ap.stopAudio();
+        else
+        {            
+            if (AudMain->BlocksizeTemp == AUD.numBlocks)
+            {
+                AUD.Climiter.compute_limiter(AUD.output, AUD.loudnessReferenceValues, AUD.limiterThreshold, AUD.gain, AUD.gainToBe);
+                //qDebug() << AUD.gain[i];
+                AudMain->BlocksizeTemp = 0;
+            }
 
-        AUD->BlocksizeTemp = 0;
+
+            for (j = 0; j < framesPerBuffer; j++)
+            {
+                AUD.gain[i] = (AUD.SLOW_TIME_CONSTANT * AUD.gainToBe[i]) + ((1 - AUD.SLOW_TIME_CONSTANT) * AUD.gain[i]); //Moving Average filter to smooth gain
+
+                //AUD.input[i][(j + (framesPerBuffer * AUD.BlocksizeTemp))] = in[i][j];
+                AUD.output[i][(j + (framesPerBuffer * AudMain->BlocksizeTemp))] = AUD.gain[i] * in[i][j];
+
+                out[i][j] = AUD.gain[i] * in[i][j];
+
+            }
+        }
     }
 
     return paContinue;
@@ -501,10 +388,9 @@ int CAudeus::AudioCallbackFreeze(const void *inputBuffer, void *outputBuffer,
     (void)timeInfo; /* Prevent unused variable warnings. */
     (void)statusFlags;
 
-    CAudeus* AUD = (CAudeus*)userData;
-    paWrapper ap;
+    CAudeus* AudFreeze = (CAudeus*)userData;
 
-    AUD->BlocksizeTemp = AUD->BlocksizeTemp + 1;
+    AudFreeze->BlocksizeTemp = AudFreeze->BlocksizeTemp + 1;
 
     for (i = 0; i < NUM_CHANNELS; i++)
     {
@@ -520,7 +406,7 @@ int CAudeus::AudioCallbackFreeze(const void *inputBuffer, void *outputBuffer,
         {
             for (j = 0; j < framesPerBuffer; j++)
             {
-                out[i][j] = AUD->gain[i] * in[i][j];
+                out[i][j] = AUD.gain[i] * in[i][j];
             }
         }
     }

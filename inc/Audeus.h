@@ -10,20 +10,24 @@
 #include "Gain.h"
 #include "Limiter.h"
 #include "Definitions.h"
+#include "audiowrapper.h"
 #include <iostream>
 #include <string>
-#include <dsound.h>
-#include <dsconf.h>
-#include "pawrapper.h"
-#include "Gate.h"
+#include <QObject>
+//#include <dsound.h>
+//#include <dsconf.h>
+//#include "pa_linux_alsa.h"
+
 
 using namespace std;
 
-class CAudeus
+class CAudeus : public QObject
 {
+    Q_OBJECT
 
 public:
     CAudeus();
+
     void calculateAverage(float **input, float *output, int numberOfNoiseValues);
 
     static int AudioCallback(const void *inputBuffer, void *outputBuffer,
@@ -54,7 +58,6 @@ public:
     CGain Cgain;
     CLoudness Cloud;
     CLimiter Climiter;
-    CGate Cgate;
 
     int LoudnessMode;
     float *LoudnessValues;
@@ -67,10 +70,7 @@ public:
     float *gain1;
     float *gain;
     float* gainToBe;
-    float* adaptiveEndGain;
-    float* increment;
     float *loud_I;
-    float *loud_O;
     float* loud_output;
 
     int BlocksizeTemp;
@@ -80,8 +80,7 @@ public:
 
     float **noiseLoudnessLevelsBuffer;
     float *noiseLoudnessLevelBufferAvg;
-    float *noiseLoudnessLevelBufferMax;
-    float* noiseArray;
+    //float* noiseArray;
     float **inputLoudnessLevelsBuffer;
     float *inputLoudnessLevelBufferAvg;
 
@@ -89,8 +88,7 @@ public:
     int numberOfInputLoudnessValues;
     int numberOfGainValues;
 
-    float* loudnessReferenceValues;
-    float* current_loudness;
+    float *loudnessReferenceValues;
     float* limiterThreshold;
     float* gateThreshold;
     float *loudnessValues;
@@ -109,4 +107,13 @@ public:
     int channelTemp;
     int startChannel;
     int endChannel;
+
+//signals:
+
+//    void on_noise(QString status);
+
+//public slots:
+    //void stopAudio();
+
 };
+

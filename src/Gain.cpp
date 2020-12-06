@@ -12,8 +12,11 @@
 #include <stdio.h>
 #include <iostream>
 #include "Audeus.h"
+#include "mainwindow.h"
 
 using namespace std;
+
+extern CAudeus AUD;
 
 CGain::CGain()
 {
@@ -23,11 +26,9 @@ CGain::CGain()
 
 void CGain::cal_gain(float *loud_in, float *loud_ref, float *gain)
 {
-    CAudeus AUD;
     for (int i = AUD.startChannel; i < AUD.endChannel; i++)
 	{
 		gain[i] = loud_ref[i] - loud_in[i];
 		gain[i] = pow(10, gain[i] / 20);
-		cout << "Gain Level for channel " << i << " is: " << gain[i] << endl;
 	}
 }

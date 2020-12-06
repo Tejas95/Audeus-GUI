@@ -21,7 +21,7 @@ public:
 
     CGate();
 
-    void compute_gate(const float** in, float** out, float* input_loudness, float* threshold, float* gain);
+    void compute_gate(float** input, float** output, float* threshold, float* gain);
 
     float* loudness_current;
 

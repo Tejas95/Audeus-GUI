@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "Definitions.h"
+#include "Loudness.h"
 
 using namespace std;
 
@@ -21,9 +22,12 @@ public:
 
     CLimiter();
 
-    void compute_limiter(float* loudness_ref, float* current_loudness, float* threshold, float* gain, float* gainToBe);
+    void compute_limiter(float** input, float* loudness_ref, float* threshold, float* gain, float* gainToBe);
 
+    float* loudness_current;
     float* gainToBe;
+
+    CLoudness cloudness1;
 
 
 };

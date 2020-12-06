@@ -10,9 +10,11 @@
 #include "Filter.h"
 #include <iostream>
 #include "Audeus.h"
+#include "mainwindow.h"
 
 using namespace std;
 
+extern CAudeus AUD;
 
 CFilter::CFilter()
 {	
@@ -34,8 +36,19 @@ CFilter::CFilter()
 
 	HS_Coefficients = set_HS_coeffs();
 	HP_Coefficients = set_HP_coeffs();
+
 	pi = 3.14159265359;
 }
+
+CFilter::~CFilter()
+{
+    //Filter State Variables
+    delete[] d0_z1;
+    delete[] d1_z1;
+    delete[] d0;
+    delete[] d1;
+}
+
 
 CFilter::coeff CFilter::set_HS_coeffs()
 {
@@ -79,9 +92,7 @@ CFilter::coeff CFilter::set_HP_coeffs()
 
 
 void CFilter::compute(float **input, float **output, coeff coeffs)
-{   
-    CAudeus AUD;
-
+{
     for (int i = AUD.startChannel; i < AUD.endChannel; i++)
     {
         for (int j = 0; j < BLOCK_SIZE; j++)

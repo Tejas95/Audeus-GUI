@@ -1,7 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "gettingstarted.h"
-#include "pawrapper.h"
+#include "audiowrapper.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -10,7 +10,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
 
     //Wallpaper
-    QPixmap bkgnd("C:\\Users\\temanjunath.ADHARMAN\\Desktop\\Audeus\\DarkBlueWallpaper.jpg");
+    QPixmap bkgnd("/home/pi/Desktop/Audeus GUI Master/Audeus/DarkBlueWallpaper.jpg");
     QPalette palette;
     palette.setBrush(QPalette::Background, bkgnd);
     this->setPalette(palette);
@@ -84,6 +84,59 @@ MainWindow::~MainWindow()
 }
 
 
+void MainWindow::paintEvent(QPaintEvent *e)
+{
+    QPainter levelMeter1(this);
+    QPainter levelMeter2(this);
+    QPainter levelMeter3(this);
+    QPainter levelMeter4(this);
+    QPainter levelMeter5(this);
+    QPainter levelMeter6(this);
+    QPainter levelMeterMaster(this);
+
+    QRect lm1(430, 405, 30, 400);
+    QRect lm2(630, 405, 30, 400);
+    QRect lm3(830, 405, 30, 400);
+    QRect lm4(1030, 405, 30, 400);
+    QRect lm5(1230, 405, 30, 400);
+    QRect lm6(1430, 405, 30, 400);
+    QRect lmMaster(1630, 510, 25, 400);
+
+
+    levelMeter1.drawRect(lm1);
+    levelMeter2.drawRect(lm2);
+    levelMeter3.drawRect(lm3);
+    levelMeter4.drawRect(lm4);
+    levelMeter5.drawRect(lm5);
+    levelMeter6.drawRect(lm6);
+    levelMeterMaster.drawRect(lmMaster);
+
+    levelMeter1.fillRect(lm1, Qt::white);
+    levelMeter2.fillRect(lm2, Qt::white);
+    levelMeter3.fillRect(lm3, Qt::white);
+    levelMeter4.fillRect(lm4, Qt::white);
+    levelMeter5.fillRect(lm5, Qt::white);
+    levelMeter6.fillRect(lm6, Qt::white);
+    levelMeterMaster.fillRect(lmMaster, Qt::white);
+
+    QBrush fill1(Qt::darkGreen, Qt::SolidPattern);
+    QBrush fill2(Qt::darkGreen, Qt::SolidPattern);
+    QBrush fill3(Qt::darkGreen, Qt::SolidPattern);
+    QBrush fill4(Qt::darkGreen, Qt::SolidPattern);
+    QBrush fill5(Qt::darkGreen, Qt::SolidPattern);
+    QBrush fill6(Qt::darkGreen, Qt::SolidPattern);
+    QBrush fillMaster(Qt::darkGreen, Qt::SolidPattern);
+
+    levelMeter1.fillRect(430, 805, 30, -30, fill1);
+    levelMeter2.fillRect(430, 805, 30, -30, fill2);
+    levelMeter3.fillRect(430, 805, 30, -30, fill3);
+    levelMeter4.fillRect(430, 805, 30, -30, fill4);
+    levelMeter5.fillRect(430, 805, 30, -30, fill5);
+    levelMeter6.fillRect(430, 805, 30, -30, fill6);
+    levelMeterMaster.fillRect(430, 805, 30, -30, fillMaster);
+}
+
+
 void MainWindow::on_PBAutoSetGain_clicked()
 {
     GettingStarted noiseIntro;
@@ -92,4 +145,9 @@ void MainWindow::on_PBAutoSetGain_clicked()
 }
 
 
+void MainWindow::on_PBStartAudio_clicked()
+{
 
+    QFuture<void> err1 = QtConcurrent::run(&this->ap, &audioWrapper::startAudio);
+
+}

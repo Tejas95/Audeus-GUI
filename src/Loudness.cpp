@@ -10,9 +10,11 @@
 #include "Loudness.h"
 #include <iostream>
 #include "Audeus.h"
+#include "mainwindow.h"
 
 using namespace std;
 
+extern CAudeus AUD;
 CLoudness::CLoudness()
 {	
 	T_g = 0.400;
@@ -35,11 +37,10 @@ CLoudness::CLoudness()
 
 void CLoudness::compute_loudness(float **input, float *output)
 {
-	CFilter Filt;
-    CAudeus AUD;
+    CFilter Filt;
 
-	Filt.compute(input, y_HS, Filt.HS_Coefficients);		//High Shelf Filter
-	Filt.compute(y_HS, y_HP, Filt.HP_Coefficients);           //High Pass Filter
+    Filt.compute(input, y_HS, Filt.HS_Coefficients);		//High Shelf Filter
+    Filt.compute(y_HS, y_HP, Filt.HP_Coefficients);           //High Pass Filter
 
 	//Loudness Calculation
     for (int i = AUD.startChannel; i < AUD.endChannel; i++)
